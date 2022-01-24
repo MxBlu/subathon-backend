@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Run Bot",
+            "name": "Run Server",
             "type": "node",
             "request": "launch",
             "runtimeExecutable": "node",
