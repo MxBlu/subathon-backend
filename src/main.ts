@@ -1,5 +1,8 @@
 import Application, { Context } from "koa";
 import Router from "koa-router";
+import { API_BASE } from "./constants.js";
+import { AuthorizeRoute, LoginRoute } from "./routes/oauth.js";
+import { Route } from "./routes/route.js";
 
 const app = new Application();
 const router = new Router();
@@ -18,7 +21,11 @@ const errorHandler = async (context: Context, next: () => Promise<void>) => {
 
 app.use(errorHandler);
 
-// TODO: Load routes, maybe just reorg this whole file
+// Register all routes
+const routes: Route[] = [];
+routes.push(new LoginRoute());
+routes.push(new AuthorizeRoute());
+routes.forEach(r => r.register(router, API_BASE));
 
 // mount the router to our web application
 app.use(router.routes());

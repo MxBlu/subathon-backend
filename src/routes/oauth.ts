@@ -1,8 +1,9 @@
 import { Context } from "koa";
 import Router from "koa-router";
 import { retrieveToken } from "../auth.js";
+import { ClientInfo, ClientMap } from "../clients.js";
 
-import { OAUTH_REDIRECT_URI, TWITCH_CLIENT_ID } from "../constants.js";
+import { FRONTEND_BASE, OAUTH_REDIRECT_URI, TWITCH_CLIENT_ID } from "../constants.js";
 import { Logger } from "../util/logger.js";
 import { Route } from "./route.js";
 
@@ -35,6 +36,7 @@ export class LoginRoute implements Route {
   }
 }
 
+// Handles OAuth callback - initialises session
 export class AuthorizeRoute implements Route {
   logger: Logger;
 
@@ -56,11 +58,18 @@ export class AuthorizeRoute implements Route {
 
     // Cash in auth code to get an access token
     const token = await retrieveToken(authCode);
-
-    // TODO: Figure out the current user's ID
-    // TODO: Store users ID along with token in ClientMap
-    // TODO: Generate a session to pass along to the frontend
-
+    // Generate a session for the token
+    const clientInfo = ClientMap.generateSession(token);
+    // Redirect back to the frontend, with session details
+    context.redirect(this.generateFrontendUrl(clientInfo));
   }
 
+  private generateFrontendUrl(clientInfo: ClientInfo): string {
+    // Generate the params
+    const url = new URL(FRONTEND_BASE);
+    url.searchParams.set('sid', clientInfo.sessionId);
+    url.searchParams.set('sau', clientInfo.sessionSecret);
+
+    return url.toString();
+  }
 }
