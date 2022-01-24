@@ -63,6 +63,7 @@ class ClientMapImpl {
     const clientInfo = this.getClient(sessionId);
     if (clientInfo != null) {
       // TODO: remove active webhooks
+      this.logger.warn(`Cleaning up client: ${clientInfo.sessionId}`);
       this.clients.delete(sessionId);
     }
   }
@@ -75,6 +76,7 @@ class ClientMapImpl {
       if (clientInfo.clientSocket == null && 
           dateAge(clientInfo.initDate) > CLIENT_TIMEOUT) {
         // Clean up the client
+        this.logger.warn(`Cleaning up stale client: ${clientInfo.sessionId}`);
         this.cleanupClient(clientInfo.sessionId);
       }
     }

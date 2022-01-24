@@ -1,5 +1,6 @@
 import Application, { Context } from "koa";
 import Router from "koa-router";
+import { SERVER_PORT } from "./constants.js";
 
 import { AuthorizeRoute, LoginRoute } from "./routes/oauth.js";
 import { Route } from "./routes/route.js";
@@ -16,12 +17,12 @@ const errorHandler = async (context: Context, next: () => Promise<void>) => {
     await next();
     // catch any error that might have occurred
   } catch (error) {
-    logger.error(`Failed to process request: ${error}`);
+    logger.error(`Failed to process request to ${context.request.path}: ${error}`);
     if (error instanceof Error) {
       logger.error(error.stack);
     }
     context.status = 500;
-    context.body = error;
+    context.body = "An error occured";
   }
 };
 
@@ -41,5 +42,5 @@ app.use(router.routes());
 app.use(router.allowedMethods());
 
 // launch the server
-app.listen(3000);
-logger.info('Server running on port 3000');
+app.listen(SERVER_PORT);
+logger.info(`Server running on port ${SERVER_PORT}`);

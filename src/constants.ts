@@ -8,6 +8,9 @@ export const DEFAULT_LOG_LEVEL: LogLevel = LogLevel[process.env.LOG_LEVEL] || Lo
 // Padding length with name
 export const LOGGER_NAME_PAD_LENGTH = 20;
 
+// Port to run REST server on
+export const SERVER_PORT = parseInt(process.env.SERVER_PORT) || 3000;
+
 // Base URL for the API - used for OAuth and webhook generation
 export const API_BASE = process.env.API_BASE;
 // Base URL for the frontend - used following OAuth flow
