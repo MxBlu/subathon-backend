@@ -18,3 +18,8 @@ export const OAUTH_REDIRECT_URI = `${API_BASE}/authorize`;
 export const TWITCH_CLIENT_ID = process.env.TWITCH_CLIENT_ID;
 // Twitch API client secret
 export const TWITCH_CLIENT_SECRET = process.env.TWITCH_CLIENT_SECRET;
+
+// Timeout interval before a client is garbage collected from the ClientMap (milliseconds)
+export const CLIENT_TIMEOUT = 5 * 60 * 1000;
+// Interval between garbage collection runs in ClientMap (milliseconds)
+export const CLIENT_MAP_GC_INTERVAL = 5 * 60 * 1000;
