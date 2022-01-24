@@ -1,5 +1,6 @@
 import * as crypto from "crypto";
 
+import { StoredToken } from "./auth.js";
 import { Logger } from "./util/logger.js";
 
 export class ClientInfo {
@@ -8,7 +9,7 @@ export class ClientInfo {
   // Secret for verifying the session
   sessionSecret: string;
   // Client token for API calls
-  clientToken: string;
+  clientToken: StoredToken;
   // Secret to verify webhook messages
   webhookSecret: string;
   // Webhooks IDs for registered webhooks
@@ -33,7 +34,7 @@ class ClientMapImpl {
   }
 
   // Generate a session and return to the client
-  public generateSession(clientToken: string): ClientInfo {
+  public generateSession(clientToken: StoredToken): ClientInfo {
     const clientInfo = new ClientInfo();
     clientInfo.clientToken = clientToken;
     // Generate session ID and secrets
@@ -45,10 +46,12 @@ class ClientMapImpl {
     return clientInfo;
   }
 
-  public deleteClient(sessionId: string): void {
+  // Clean up a retired client
+  // Removes webhooks and other associated
+  public cleanupClient(sessionId: string): void {
     const clientInfo = this.getClient(sessionId);
     if (clientInfo != null) {
-      // TODO: Maybe clean up client (remove active webhooks)?
+      // TODO: remove active webhooks
       this.clients.delete(sessionId);
     }
   }

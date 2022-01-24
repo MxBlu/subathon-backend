@@ -1,7 +1,8 @@
 import { Context } from "koa";
 import Router from "koa-router";
+import { retrieveToken } from "../auth.js";
 
-import { API_BASE, TWITCH_CLIENT_ID } from "../constants.js";
+import { OAUTH_REDIRECT_URI, TWITCH_CLIENT_ID } from "../constants.js";
 import { Logger } from "../util/logger.js";
 import { Route } from "./route.js";
 
@@ -26,7 +27,7 @@ export class LoginRoute implements Route {
     // Generate the params
     const url = new URL("https://id.twitch.tv/oauth2/authorize");
     url.searchParams.set('client_id', TWITCH_CLIENT_ID);
-    url.searchParams.set('redirect_uri', `${API_BASE}/authorize`);
+    url.searchParams.set('redirect_uri', OAUTH_REDIRECT_URI);
     url.searchParams.set('response_type', 'code');
     url.searchParams.set('scope', "bits:read channel:read:subscriptions");
 
@@ -52,6 +53,9 @@ export class AuthorizeRoute implements Route {
       context.status = 400;
       return;
     }
+
+    // Cash in auth code to get an access token
+    const token = await retrieveToken(authCode);
 
     // TODO: Figure out the current user's ID
     // TODO: Store users ID along with token in ClientMap

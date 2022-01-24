@@ -12,5 +12,9 @@ export const LOGGER_NAME_PAD_LENGTH = 20;
 export const API_BASE = process.env.API_BASE;
 // Base URL for the frontend - used following OAuth flow
 export const FRONTEND_BASE = process.env.FRONTEND_BASE;
-// Twitch API Client ID
+// URL to redirect from OAuth
+export const OAUTH_REDIRECT_URI = `${API_BASE}/authorize`;
+// Twitch API client ID
 export const TWITCH_CLIENT_ID = process.env.TWITCH_CLIENT_ID;
+// Twitch API client secret
+export const TWITCH_CLIENT_SECRET = process.env.TWITCH_CLIENT_SECRET;
