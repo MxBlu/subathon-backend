@@ -49,6 +49,7 @@ class ClientMapImpl {
     const clientInfo = this.getClient(sessionId);
     if (clientInfo != null) {
       // TODO: Maybe clean up client (remove active webhooks)?
+      this.clients.delete(sessionId);
     }
   }
 }
