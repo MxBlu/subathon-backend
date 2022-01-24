@@ -1,0 +1,30 @@
+{
+  "name": "subathon-backend",
+  "version": "0.0.1",
+  "description": "Backend for subathon-timer",
+  "main": "main.js",
+  "type": "module",
+  "scripts": {
+    "start": "nodemon --watch \"src/**\" --ext ts,json --exec node --experimental-specifier-resolution=node --loader ts-node/esm src/main.ts",
+    "fstart": "pm2 start --name quotebot built/main.js",
+    "build": "tsc --build tsconfig.json",
+    "clean": "tsc --build --clean",
+    "lint": "eslint . --ext .ts"
+  },
+  "dependencies": {
+    "dotenv": "^14.2.0",
+    "koa": "^2.13.4",
+    "koa-route": "^3.2.0"
+  },
+  "devDependencies": {
+    "@types/koa": "^2.13.4",
+    "@types/koa-router": "^7.4.4",
+    "@types/node": "17.0.4",
+    "@typescript-eslint/eslint-plugin": "4.26.0",
+    "@typescript-eslint/parser": "4.26.0",
+    "eslint": "7.28.0",
+    "nodemon": "^1.19.0",
+    "ts-node": "^10.4.0",
+    "typescript": "4.3.5"
+  }
+}
