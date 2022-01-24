@@ -15,8 +15,8 @@ export class LoginRoute implements Route {
     this.logger = new Logger("LoginRoute");
   }
 
-  public register(router: Router, baseRoute: string): void {
-    router.get(baseRoute + '/login', this.handle);
+  public register(router: Router): void {
+    router.get('/login', this.handle);
   }
 
   public handle = async (context: Context): Promise<void> => {
@@ -44,8 +44,8 @@ export class AuthorizeRoute implements Route {
     this.logger = new Logger("AuthorizeRoute");
   }
 
-  public register(router: Router, baseRoute: string): void {
-    router.get(baseRoute + '/authorize', this.handle);
+  public register(router: Router): void {
+    router.get('/authorize', this.handle);
   }
 
   public handle = async (context: Context): Promise<void> => {
@@ -60,6 +60,9 @@ export class AuthorizeRoute implements Route {
     const token = await retrieveToken(authCode);
     // Generate a session for the token
     const clientInfo = ClientMap.generateSession(token);
+
+    this.logger.debug(`Generated session for new client: ${clientInfo.sessionId}`);
+
     // Redirect back to the frontend, with session details
     context.redirect(this.generateFrontendUrl(clientInfo));
   }

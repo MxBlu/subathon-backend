@@ -1,11 +1,13 @@
 import Application, { Context } from "koa";
 import Router from "koa-router";
-import { API_BASE } from "./constants.js";
+
 import { AuthorizeRoute, LoginRoute } from "./routes/oauth.js";
 import { Route } from "./routes/route.js";
+import { Logger } from "./util/logger.js";
 
 const app = new Application();
 const router = new Router();
+const logger = new Logger("Server")
 
 // Koa error handling middleware
 const errorHandler = async (context: Context, next: () => Promise<void>) => {
@@ -14,6 +16,10 @@ const errorHandler = async (context: Context, next: () => Promise<void>) => {
     await next();
     // catch any error that might have occurred
   } catch (error) {
+    logger.error(`Failed to process request: ${error}`);
+    if (error instanceof Error) {
+      logger.error(error.stack);
+    }
     context.status = 500;
     context.body = error;
   }
@@ -25,7 +31,10 @@ app.use(errorHandler);
 const routes: Route[] = [];
 routes.push(new LoginRoute());
 routes.push(new AuthorizeRoute());
-routes.forEach(r => r.register(router, API_BASE));
+routes.forEach(r => {
+  logger.trace(`Registered route for class: ${r.constructor.name}`);
+  r.register(router)
+});
 
 // mount the router to our web application
 app.use(router.routes());
@@ -33,3 +42,4 @@ app.use(router.allowedMethods());
 
 // launch the server
 app.listen(3000);
+logger.info('Server running on port 3000');

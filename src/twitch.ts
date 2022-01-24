@@ -1,3 +1,5 @@
+import fetch from 'node-fetch';
+
 import { refreshToken, StoredToken } from "./auth.js";
 import { Logger } from "./util/logger.js";
 

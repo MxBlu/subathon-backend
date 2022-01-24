@@ -1,8 +1,13 @@
+import fetch from 'node-fetch';
+
 import { OAUTH_REDIRECT_URI, TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET } from "./constants.js";
+import { Logger } from './util/logger.js';
 
 /*
   Authorization helper functions/classes/interfaces
 */
+
+const logger = new Logger("Auth");
 
 // Response object when retrieving an OAuth token
 interface OAuthTokenResponse {
@@ -41,13 +46,13 @@ export async function retrieveToken(authorizationCode: string): Promise<StoredTo
   if (tokenResponse.ok) {
     // Parse token from response
     const token = (await tokenResponse.json()) as OAuthTokenResponse;
-    this.logger.trace(`Successfully retreived token: ${token.access_token}`)
+    logger.trace(`Successfully retreived token: ${token.access_token}`)
     // Create and return a new StoredToken
     const storedToken = new StoredToken(token);
     return storedToken;
   } else {
     // If the response wasn't ok, something's wrong...
-    this.logger.error(`OAuth token request failed: Status ${tokenResponse.status} - ${await tokenResponse.text()}`);
+    logger.error(`OAuth token request failed: Status ${tokenResponse.status} - ${await tokenResponse.text()}`);
     return null;
   }
 }
@@ -67,7 +72,7 @@ export async function refreshToken(storedToken: StoredToken): Promise<StoredToke
     return storedToken;
   } else {
     // If the response wasn't ok, something's wrong...
-    this.logger.error(`OAuth token refresh failed: Status ${tokenResponse.status} - ${await tokenResponse.text()}`);
+    logger.error(`OAuth token refresh failed: Status ${tokenResponse.status} - ${await tokenResponse.text()}`);
     return null;
   }
 }
