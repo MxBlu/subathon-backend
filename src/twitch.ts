@@ -31,9 +31,12 @@ class AuthorizationError extends Error {
 export class TwitchAPIClient {
   logger: Logger;
 
+  clientId: string;
+
   token: StoredToken;
 
-  constructor(token: StoredToken) {
+  constructor(token: StoredToken, clientId: string) {
+    this.clientId = clientId;
     this.token = token;
   }
 
@@ -55,7 +58,11 @@ export class TwitchAPIClient {
     }
     // Do the request
     const response = await fetch(`https://api.twitch.tv/helix${endpoint}`, {
-      method: "GET"
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${this.token.token}`,
+        "Client-Id": this.clientId
+      }
     });
     // If the request returned a bad response, return null;
     if (!response.ok) {
