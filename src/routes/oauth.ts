@@ -1,11 +1,10 @@
-import { Context } from "koa";
 import Router from "koa-router";
+
 import { retrieveToken } from "../auth.js";
 import { ClientInfo, ClientMap } from "../clients.js";
-
 import { FRONTEND_BASE, OAUTH_REDIRECT_URI, TWITCH_CLIENT_ID } from "../constants.js";
 import { Logger } from "../util/logger.js";
-import { Route } from "./route.js";
+import { RContext, Route } from "./route.js";
 
 // Provides login 
 export class LoginRoute implements Route {
@@ -19,7 +18,7 @@ export class LoginRoute implements Route {
     router.get('/login', this.handle);
   }
 
-  public handle = async (context: Context): Promise<void> => {
+  public handle = async (context: RContext): Promise<void> => {
     // Redirect to OAuth authorize URL
     context.redirect(this.generateAuthorizationUrl());
   }
@@ -48,7 +47,7 @@ export class AuthorizeRoute implements Route {
     router.get('/authorize', this.handle);
   }
 
-  public handle = async (context: Context): Promise<void> => {
+  public handle = async (context: RContext): Promise<void> => {
     const authCode = context.request.query.code as string;
     // If no "code" is present, response is malformed
     if (authCode == null) {
