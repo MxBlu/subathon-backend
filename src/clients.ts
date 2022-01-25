@@ -61,6 +61,14 @@ class ClientMapImpl {
     return clientInfo;
   }
 
+  // Setup a newly connected client
+  // Assumes the session is present
+  public setupClient(sessionId: string, socket: WebSocket): void {
+    const clientInfo = this.getClient(sessionId);
+    clientInfo.clientSocket = socket;
+    // TODO: setup webhooks
+  }
+
   // Clean up a retired client
   // Removes webhooks and other associated
   public cleanupClient(sessionId: string): void {

@@ -34,13 +34,13 @@ export class WSRoute implements Route {
 
     // Register websocket to client
     this.logger.info(`Socket registered for session: ${sessionId}`);
-    clientInfo.clientSocket = context.websocket;
+    ClientMap.setupClient(clientInfo.sessionId, context.websocket);
     socketSend(context.websocket, { 'status': 'CONNECTED' });
 
     // When the socket closes, remove the socket from the ClientInfo
     context.websocket.on("close", () => {
       this.logger.info(`Socket disconnected for session: ${sessionId}`);
-      clientInfo.clientSocket = null;
+      ClientMap.cleanupClient(clientInfo.sessionId);
     });
   }
 }
