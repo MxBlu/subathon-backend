@@ -8,13 +8,13 @@ import { RContext, Route } from "./routes/route.js";
 import { WSRoute } from "./routes/ws.js";
 import { Logger } from "./util/logger.js";
 
+const logger = new Logger("Server");
+
 // Koa Application with websocket support
 const app = websockify<DefaultState, RContext>(new Application);
 // 2 routers for HTTP and WS
 const router = new Router<DefaultState, RContext>();
 const wsRouter = new Router<DefaultState, RContext>();
-
-const logger = new Logger("Server")
 
 // Koa error handling middleware
 const errorHandler = async (context: Context, next: () => Promise<void>) => {
