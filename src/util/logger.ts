@@ -1,4 +1,4 @@
-import * as dotenv from 'dotenv';
+import dotenv from 'dotenv';
 dotenv.config();
 
 import { DEFAULT_LOG_LEVEL, LOGGER_NAME_PAD_LENGTH } from "../constants.js";

@@ -1,4 +1,4 @@
-import Application, { Context, DefaultState, Next } from "koa";
+import Application, { Context, DefaultState } from "koa";
 import Router from "koa-router";
 import websockify from "koa-websocket";
 
@@ -7,7 +7,7 @@ import { AuthorizeRoute, LoginRoute } from "./routes/oauth.js";
 import { RContext, Route } from "./routes/route.js";
 import { Logger } from "./util/logger.js";
 
-const app = websockify(new Application);
+const app = websockify<DefaultState, RContext>(new Application);
 const router = new Router<DefaultState, RContext>();
 
 const logger = new Logger("Server")
@@ -45,17 +45,23 @@ app.use(router.routes());
 app.use(router.allowedMethods());
 
 const wsRouter = new Router<DefaultState, RContext>();
-wsRouter.get('/ws', function* get(next) {
-  // eslint-disable-next-line @typescript-eslint/no-this-alias
-  const ctx: Context = this;
+wsRouter.get('/ws', (ctx: RContext): void => {
   ctx.websocket.send('Hello World');
   ctx.websocket.on('message', (message) => {
     console.log(message);
   });
-  yield next;
 });
 
-app.ws.use(wsRouter.routes());
+const wsUnknownRoute = (ctx: RContext): void => {
+  logger.warn(`WS Request to unknown endpoint received`);
+  ctx.websocket.close(1003);
+}
+
+const wsRoutes = wsRouter.routes();
+
+//fku
+app.ws.use(wsRoutes as unknown as websockify.Middleware<Application.DefaultState, RContext>);
+app.ws.use(wsUnknownRoute);
 
 // launch the server
 app.listen(SERVER_PORT);
