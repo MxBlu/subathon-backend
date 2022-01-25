@@ -4,6 +4,9 @@ import { StoredToken } from "./auth.js";
 import { CLIENT_MAP_GC_INTERVAL, CLIENT_TIMEOUT } from "./constants.js";
 import { Logger } from "./util/logger.js";
 
+export const HEADER_SESSION_ID = "x-session-id";
+export const HEADER_SESSION_SECRET = "x-session-secret";
+
 export class ClientInfo {
   // Session ID
   sessionId: string;
