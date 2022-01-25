@@ -20,6 +20,8 @@ const logger = new Logger("Server")
 const errorHandler = async (context: Context, next: () => Promise<void>) => {
   // call our next middleware
   try {
+    const requestType = context.websocket != null ? "WS" : "HTTP";
+    logger.info(`Request: ${requestType} - ${context.path} - ${context.ip}`);
     await next();
     // catch any error that might have occurred
   } catch (error) {

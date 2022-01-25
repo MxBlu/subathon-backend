@@ -1,6 +1,7 @@
 import Router from "koa-router";
 import { ClientMap, HEADER_SESSION_ID, HEADER_SESSION_SECRET } from "../clients.js";
 import { Logger } from "../util/logger.js";
+import { socketSend } from "../util/socket_utils.js";
 import { RContext, Route } from "./route.js";
 
 // Route to handle websocket requests
@@ -16,7 +17,6 @@ export class WSRoute implements Route {
   }
 
   public handle = async (context: RContext): Promise<void> => {
-    // Welcome handling
     // Get session details from header
     const sessionId = context.header[HEADER_SESSION_ID] as string;
     const sessionSecret = context.header[HEADER_SESSION_SECRET] as string;
@@ -27,12 +27,20 @@ export class WSRoute implements Route {
       //  or the secret doesn't match, drop the connection
       this.logger.warn(
         `Client attempted to connected with unknown or incorrect session: ${sessionId}`);
+      socketSend(context.websocket, { 'status': 'UNAUTHORIZED' });
       context.websocket.close(1008);
       return;
     }
-    // Event handling
-    context.websocket.on('message', (message) => {
-      console.log(message);
+
+    // Register websocket to client
+    this.logger.info(`Socket registered for session: ${sessionId}`);
+    clientInfo.clientSocket = context.websocket;
+    socketSend(context.websocket, { 'status': 'CONNECTED' });
+
+    // When the socket closes, remove the socket from the ClientInfo
+    context.websocket.on("close", () => {
+      this.logger.info(`Socket disconnected for session: ${sessionId}`);
+      clientInfo.clientSocket = null;
     });
   }
 }

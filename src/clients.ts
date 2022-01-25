@@ -1,4 +1,5 @@
 import * as crypto from "crypto";
+import * as WebSocket from 'ws';
 
 import { StoredToken } from "./auth.js";
 import { CLIENT_MAP_GC_INTERVAL, CLIENT_TIMEOUT } from "./constants.js";
@@ -21,7 +22,7 @@ export class ClientInfo {
   // Webhooks IDs for registered webhooks
   webhooks: string[] = [];
   // Websocket connection to the client
-  clientSocket: never;
+  clientSocket: WebSocket;
 }
 
 function dateAge(date: Date): number {
