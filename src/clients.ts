@@ -88,7 +88,6 @@ class ClientMapImpl {
       const webhookId = webhookResponse.data[0].id;
       this.logger.debug(
           `Created webhook of type '${type}' for session: ${sessionId}, ${webhookId}`);
-      this.logger.trace(`Webhook cost: ${webhookResponse.data[0].cost} / ${webhookResponse.max_total_cost}`);
       // Add webhooks to ClientInfo and lookup
       clientInfo.webhooks.push(webhookId);
       this.webhookSessionLookup.set(webhookId, sessionId);

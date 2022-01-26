@@ -45,7 +45,7 @@ export class WSRoute implements Route {
 
     try {
       // Register websocket to client
-      ClientMap.setupClient(clientInfo.sessionId, context.websocket);
+      await ClientMap.setupClient(clientInfo.sessionId, context.websocket);
       this.logger.info(`Socket registered for session: ${sessionId}`);
       // Let the socket know we're set up
       socketSend(context.websocket, { 'status': 'CONNECTED' });
