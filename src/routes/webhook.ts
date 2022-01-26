@@ -3,6 +3,7 @@ import { ClientMap } from "../clients.js";
 import { TwitchAPIClient, WebhookEventRequest } from "../twitch.js";
 
 import { Logger } from "../util/logger.js";
+import { socketSend } from "../util/socket_utils.js";
 import { RContext, Route } from "./route.js";
 
 // Handle webhook calls from Twitch
@@ -60,7 +61,10 @@ export class WebhookRoute implements Route {
       return;
     }
 
-    console.log(request);
+    // Send the event to the associated websocket
+    if (clientInfo.clientSocket != null) {
+      socketSend(clientInfo.clientSocket, request);
+    }
 
     // All processed well, return a 204
     context.status = 204;
