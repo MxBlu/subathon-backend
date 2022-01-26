@@ -11,7 +11,7 @@ export const HEADER_SESSION_ID = "x-session-id";
 export const HEADER_SESSION_SECRET = "x-session-secret";
 
 // Webhook types to register for a new client
-const WEBHOOK_TYPES = [ "channel.follow", "channel.subscribe", "channel.subscription.gift", "channel.cheer" ];
+const WEBHOOK_TYPES = [ "channel.subscribe", "channel.subscription.gift", "channel.cheer" ];
 
 export class ClientInfo {
   // Session ID
