@@ -8,7 +8,7 @@ import { AuthorizeRoute, LoginRoute } from "./routes/oauth.js";
 import { RContext, Route } from "./routes/route.js";
 import { WebhookRoute } from "./routes/webhook.js";
 import { WSRoute } from "./routes/ws.js";
-import { initialiseAppToken } from "./twitch.js";
+import { cleanupOldWebhooks, initialiseAppToken } from "./twitch.js";
 import { Logger } from "./util/logger.js";
 
 const logger = new Logger("Server");
@@ -74,8 +74,15 @@ app.ws.use(errorHandler);
 app.ws.use(wsRoutesMiddleware as websockify.Middleware<Application.DefaultState, RContext>);
 app.ws.use(wsUnknownRoute);
 
-// Load the Twitch app credentials
-initialiseAppToken();
+async function initTwitchAppClient() {
+  // Load the Twitch app credentials
+  await initialiseAppToken();
+  // Remove old webhooks from previous runs
+  await cleanupOldWebhooks();
+}
+
+// Run async init routines
+initTwitchAppClient();
 
 // launch the server
 app.listen(SERVER_PORT);

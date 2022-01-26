@@ -10,37 +10,33 @@ import { Logger } from "./util/logger.js";
 
 // https://dev.twitch.tv/docs/api/reference#get-users
 export interface GETUsersResponse {
-  data: [
-    { 
-      id: string;
-      login: string;
-      display_name: string;
-      type: string;
-      broadcaster_type: string;
-      description: string;
-      profile_image_url: string;
-      offline_image_url: string;
-      view_count: number;
-      email: string;
-      created_at: string;
-    }
-  ]
+  data: { 
+    id: string;
+    login: string;
+    display_name: string;
+    type: string;
+    broadcaster_type: string;
+    description: string;
+    profile_image_url: string;
+    offline_image_url: string;
+    view_count: number;
+    email: string;
+    created_at: string;
+  }[];
 }
 
 // https://dev.twitch.tv/docs/api/reference#get-eventsub-subscriptions
 export interface GETEventSubResponse {
-  data: [
-    {
-      id: string;
-      status: string;
-      type: string;
-      version: string;
-      condition: APIEventSubCondition;
-      created_at: string;
-      transport: APIEventSubTransport;
-      cost: number;
-    }
-  ],
+  data: {
+    id: string;
+    status: string;
+    type: string;
+    version: string;
+    condition: APIEventSubCondition;
+    created_at: string;
+    transport: APIEventSubTransport;
+    cost: number;
+  }[];
   total: number;
   total_cost: number;
   max_total_cost: number;
@@ -59,39 +55,35 @@ export interface POSTEventSubRequest {
 
 // https://dev.twitch.tv/docs/api/reference#create-eventsub-subscription
 export interface POSTEventSubResponse {
-  data: [
-    {
-      id: string;
-      status: string;
-      type: string;
-      version: string;
-      condition: APIEventSubCondition;
-      created_at: string;
-      transport: APIEventSubTransport;
-      cost: number;
-    }
-  ],
+  data: {
+    id: string;
+    status: string;
+    type: string;
+    version: string;
+    condition: APIEventSubCondition;
+    created_at: string;
+    transport: APIEventSubTransport;
+    cost: number;
+  }[],
   total: number;
   total_cost: number;
   max_total_cost: number;
 }
 
 export interface GETUsersResponse {
-  data: [
-    { 
-      id: string;
-      login: string;
-      display_name: string;
-      type: string;
-      broadcaster_type: string;
-      description: string;
-      profile_image_url: string;
-      offline_image_url: string;
-      view_count: number;
-      email: string;
-      created_at: string;
-    }
-  ]
+  data: { 
+    id: string;
+    login: string;
+    display_name: string;
+    type: string;
+    broadcaster_type: string;
+    description: string;
+    profile_image_url: string;
+    offline_image_url: string;
+    view_count: number;
+    email: string;
+    created_at: string;
+  }[];
 }
 
 // https://dev.twitch.tv/docs/eventsub/eventsub-reference#conditions
@@ -117,6 +109,31 @@ export async function initialiseAppToken(): Promise<void> {
   const logger = new Logger("AppTokenInit")
   appToken = await retrieveToken();
   logger.info('App token loaded');
+}
+
+export async function cleanupOldWebhooks(): Promise<void> {
+  const logger = new Logger("WebhookCleanup");
+  // Get app access token client
+  const client = new TwitchAPIClient();
+
+  // Get all webhooks present
+  const webhooks: string[] = [];
+  let cursor: string = null;
+  do {
+    const getEventSubResponse = await client.getEventSubSubscriptions(cursor);
+    // Add all webhook ids to the list
+    getEventSubResponse.data.forEach(esr => webhooks.push(esr.id));
+    // Set the cursor if present
+    cursor = getEventSubResponse.pagination?.cursor;
+  } while (cursor != null);
+
+  logger.debug(`${webhooks.length} webhooks to delete`);
+  
+  // Delete all webhooks
+  for (const webhookId of webhooks) {
+    await client.deleteEventSubSubscription(webhookId);
+    logger.debug(`Deleted webhook ${webhookId}`);
+  }
 }
 
 export class TwitchAPIClient {
@@ -145,8 +162,12 @@ export class TwitchAPIClient {
     return await this.call('/users', 'GET') as GETUsersResponse;
   }
 
-  public async getEventSubSubscriptions(): Promise<GETEventSubResponse> {
-    return await this.call('/eventsub/subscriptions', 'GET') as GETEventSubResponse;
+  public async getEventSubSubscriptions(cursor?: string): Promise<GETEventSubResponse> {
+    let url = '/eventsub/subscriptions';
+    if (cursor != null) {
+      url += `?after=${cursor}`;
+    }
+    return await this.call(url, 'GET') as GETEventSubResponse;
   }
 
   // Create a new EventSub subscription on the Twitch API
