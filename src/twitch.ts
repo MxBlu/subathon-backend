@@ -81,7 +81,7 @@ interface APIEventSubCondition {
 interface APIEventSubTransport {
   method: "webhook";
   callback: string;
-  secret: string;
+  secret?: string;
 }
 
 class AuthorizationError extends Error {
@@ -95,13 +95,37 @@ export class TwitchAPIClient {
   token: StoredToken;
 
   constructor(token: StoredToken, clientId: string) {
+    this.logger = new Logger("TwitchAPIClient");
     this.clientId = clientId;
     this.token = token;
   }
 
-  // Call GET /users on the Twitch API
+  // Identify the current user with the Twitch API
   public async identifyUser(): Promise<GETUsersResponse> {
     return await this.call('/users', 'GET') as GETUsersResponse;
+  }
+
+  // Create a new EventSub subscription on the Twitch API
+  public async createEventSubSubscription(type: string, userId: string, 
+      callbackUrl: string, secret: string): Promise<POSTEventSubResponse> {
+    return await this.call('/eventsub/subscriptions', 'POST', 
+      JSON.stringify({
+        type: type,
+        version: "1",
+        condition: {
+          broadcaster_user_id: userId
+        },
+        transport: {
+          method: "webhook",
+          callback: callbackUrl,
+          secret: secret
+        }
+      })) as POSTEventSubResponse;
+  }
+
+  // Delete an EventSub subscription on the Twitch API
+  public async deleteEventSubSubscription(subscriptionId: string): Promise<void> {
+    await this.call(`/eventsub/subscriptions?id=${subscriptionId}`, 'DELETE');
   }
 
   // Make a GET request to the Twitch API
