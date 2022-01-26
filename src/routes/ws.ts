@@ -31,6 +31,14 @@ export class WSRoute implements Route {
       context.websocket.close(1008);
       return;
     }
+    // Prevent multiple connections for the same session
+    if (clientInfo.clientSocket != null) {
+      this.logger.warn(
+        `Client attempted to connect to a in-use session: ${sessionId}`);
+      socketSend(context.websocket, { 'status': 'IN_USE' });
+      context.websocket.close(1008);
+      return;
+    }
 
     // Setup socket cleanup handler before continuing, just in case
     context.websocket.on("close", () => {
