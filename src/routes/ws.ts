@@ -32,15 +32,29 @@ export class WSRoute implements Route {
       return;
     }
 
-    // Register websocket to client
-    this.logger.info(`Socket registered for session: ${sessionId}`);
-    ClientMap.setupClient(clientInfo.sessionId, context.websocket);
-    socketSend(context.websocket, { 'status': 'CONNECTED' });
-
-    // When the socket closes, remove the socket from the ClientInfo
+    // Setup socket cleanup handler before continuing, just in case
     context.websocket.on("close", () => {
-      this.logger.info(`Socket disconnected for session: ${sessionId}`);
-      ClientMap.cleanupClient(clientInfo.sessionId);
+      try {
+        this.logger.info(`Socket disconnected for session: ${sessionId}`);
+        ClientMap.cleanupClient(clientInfo.sessionId);
+      } catch (e) {
+        this.logger.error(`Failed to cleanup client for session ${sessionId}: ${e}`);
+        this.logger.error((e as Error).stack);
+      }
     });
+
+    try {
+      // Register websocket to client
+      ClientMap.setupClient(clientInfo.sessionId, context.websocket);
+      this.logger.info(`Socket registered for session: ${sessionId}`);
+      // Let the socket know we're set up
+      socketSend(context.websocket, { 'status': 'CONNECTED' });
+    } catch (e) {
+      this.logger.error(`Unable to setup client: ${e}`);
+      this.logger.error((e as Error).stack);
+      // Alert the socket that we failed and close the connection
+      socketSend(context.websocket, { 'status': 'ERROR' });
+      context.websocket.close(1008);
+    }
   }
 }
