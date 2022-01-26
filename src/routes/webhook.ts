@@ -64,6 +64,7 @@ export class WebhookRoute implements Route {
     // Send the event to the associated websocket
     if (clientInfo.clientSocket != null) {
       socketSend(clientInfo.clientSocket, request);
+      this.logger.info(`Webhook event forwarded to socket: ${request.subscription.type}, ${clientInfo.sessionId}`);
     }
 
     // All processed well, return a 204
