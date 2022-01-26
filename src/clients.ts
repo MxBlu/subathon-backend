@@ -121,6 +121,21 @@ class ClientMapImpl {
     }
   }
 
+  // Get the ClientInfo for a given webhook ID
+  public getClientInfoForWebhook(webhookId: string): ClientInfo {
+    // If the webhook ID is null, return null
+    if (webhookId == null) {
+      return null;
+    }
+    // Attempt to find a session ID from the lookup, return null if not present
+    const sessionId = this.webhookSessionLookup.get(webhookId);
+    if (sessionId == null) {
+      return null;
+    }
+    // Return the ClientInfo for the session ID
+    return this.clients.get(sessionId);
+  }
+
   // Remove client sessions that aren't being used
   private clientGarbageCollectionTask = () => {
     // Iterate over all the clients
