@@ -9,6 +9,8 @@ import { Logger } from "./util/logger.js";
 export const HEADER_SESSION_ID = "x-session-id";
 export const HEADER_SESSION_SECRET = "x-session-secret";
 
+const WEBHOOK_TYPES = [ "channel.follow", "channel.subscribe", "channel.subscription.gift", "channel.cheer" ];
+
 export class ClientInfo {
   // Session ID
   sessionId: string;
@@ -35,10 +37,13 @@ class ClientMapImpl {
   logger: Logger;
   // User IDs mapped to ClientInfos
   clients: Map<string, ClientInfo>;
+  // Lookup from webhook ID to session ID
+  webhookSessionLookup: Map<string, string>;
 
   constructor() {
     this.logger = new Logger("ClientMap");
     this.clients = new Map();
+    this.webhookSessionLookup = new Map();
     // Start the cleanup task
     setInterval(this.clientGarbageCollectionTask, CLIENT_MAP_GC_INTERVAL);
   }
@@ -77,13 +82,17 @@ class ClientMapImpl {
     // Create a client with the app's credentials
     const appClient = new TwitchAPIClient();
     // Setup webhooks to listen to
-    const followWebhookResponse = await appClient.createEventSubSubscription(
-        "channel.follow", userId, WEBHOOK_URI, clientInfo.webhookSecret);
-    this.logger.debug(
-        `Created webhook for session: ${sessionId}, ${followWebhookResponse.data[0].id}`);
-    this.logger.trace(`Webhook cost: ${followWebhookResponse.data[0].cost} / ${followWebhookResponse.max_total_cost}`);
-    clientInfo.webhooks.push(followWebhookResponse.data[0].id);
-    // TODO: setup webhooks
+    for (const type of WEBHOOK_TYPES) {
+      const webhookResponse = await appClient.createEventSubSubscription(
+          type, userId, WEBHOOK_URI, clientInfo.webhookSecret);
+      const webhookId = webhookResponse.data[0].id;
+      this.logger.debug(
+          `Created webhook of type '${type}' for session: ${sessionId}, ${webhookId}`);
+      this.logger.trace(`Webhook cost: ${webhookResponse.data[0].cost} / ${webhookResponse.max_total_cost}`);
+      // Add webhooks to ClientInfo and lookup
+      clientInfo.webhooks.push(webhookId);
+      this.webhookSessionLookup.set(webhookId, sessionId);
+    }
   }
 
   // Clean up a retired client
@@ -91,7 +100,6 @@ class ClientMapImpl {
   public async cleanupClient(sessionId: string): Promise<void> {
     const clientInfo = this.getClient(sessionId);
     if (clientInfo != null) {
-      // TODO: remove active webhooks
       this.logger.warn(`Cleaning up client: ${clientInfo.sessionId}`);
 
       // Clean up active webhooks
@@ -101,6 +109,7 @@ class ClientMapImpl {
           await client.deleteEventSubSubscription(webhookId);
           this.logger.debug(
               `Deleted webhook for session: ${sessionId}, ${webhookId}`);
+          this.webhookSessionLookup.delete(webhookId);
         } catch (e) {
           this.logger.error(`Failed to delete webhook: ${e}`);
           this.logger.error((e as Error).stack);
