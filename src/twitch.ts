@@ -1,3 +1,5 @@
+import * as crypto from "crypto";
+import { IncomingHttpHeaders } from "http";
 import fetch, { RequestInit } from 'node-fetch';
 
 import { refreshToken, retrieveToken, StoredToken } from "./auth.js";
@@ -7,6 +9,10 @@ import { Logger } from "./util/logger.js";
 /*
   Twitch API client
 */
+
+export const TWITCH_MESSAGE_ID = 'twitch-eventsub-message-id';
+export const TWITCH_MESSAGE_TIMESTAMP = 'twitch-eventsub-message-timestamp';
+export const TWITCH_MESSAGE_SIGNATURE = 'twitch-eventsub-message-signature';
 
 // https://dev.twitch.tv/docs/api/reference#get-users
 export interface GETUsersResponse {
@@ -27,16 +33,7 @@ export interface GETUsersResponse {
 
 // https://dev.twitch.tv/docs/api/reference#get-eventsub-subscriptions
 export interface GETEventSubResponse {
-  data: {
-    id: string;
-    status: string;
-    type: string;
-    version: string;
-    condition: APIEventSubCondition;
-    created_at: string;
-    transport: APIEventSubTransport;
-    cost: number;
-  }[];
+  data: APIEventSubscription[];
   total: number;
   total_cost: number;
   max_total_cost: number;
@@ -55,35 +52,27 @@ export interface POSTEventSubRequest {
 
 // https://dev.twitch.tv/docs/api/reference#create-eventsub-subscription
 export interface POSTEventSubResponse {
-  data: {
-    id: string;
-    status: string;
-    type: string;
-    version: string;
-    condition: APIEventSubCondition;
-    created_at: string;
-    transport: APIEventSubTransport;
-    cost: number;
-  }[],
+  data: APIEventSubscription[],
   total: number;
   total_cost: number;
   max_total_cost: number;
 }
 
-export interface GETUsersResponse {
-  data: { 
-    id: string;
-    login: string;
-    display_name: string;
-    type: string;
-    broadcaster_type: string;
-    description: string;
-    profile_image_url: string;
-    offline_image_url: string;
-    view_count: number;
-    email: string;
-    created_at: string;
-  }[];
+export interface WebhookEventRequest {
+  subscription: APIEventSubscription;
+  event: unknown;
+  challenge?: string;
+}
+
+interface APIEventSubscription {
+  id: string;
+  status: string;
+  type: string;
+  version: string;
+  condition: APIEventSubCondition;
+  created_at: string;
+  transport: APIEventSubTransport;
+  cost: number;
 }
 
 // https://dev.twitch.tv/docs/eventsub/eventsub-reference#conditions
@@ -136,10 +125,33 @@ export async function cleanupOldWebhooks(): Promise<void> {
   }
 }
 
+// Build the message used to get the HMAC
+function getHmacMessage(rawBody: string, headers: IncomingHttpHeaders): string {
+  return headers[TWITCH_MESSAGE_ID] as string + 
+      headers[TWITCH_MESSAGE_TIMESTAMP] as string + 
+      rawBody;
+}
+
+// Get the HMAC for a given message and secret
+function getHmac(secret: string, message: string): string {
+  return "sha256=" + crypto.createHmac('sha256', secret)
+    .update(message)
+    .digest('hex');
+}
+
 export class TwitchAPIClient {
 
-  public static async validateRequest(): Promise<boolean> {
-    return true;
+  // Returns true if message matches expected HMAC
+  public static validateRequest(rawBody: string, headers: IncomingHttpHeaders, 
+      secret: string): boolean {
+    // Compute HMAC
+    const hmacMessage = getHmacMessage(rawBody, headers);
+    const hmac = getHmac(secret, hmacMessage);
+    // Get expected HMAC from headers
+    const messageSignature = headers[TWITCH_MESSAGE_SIGNATURE] as string;
+    // Compare HMAC values
+    return crypto.timingSafeEqual(
+      Buffer.from(hmac), Buffer.from(messageSignature));
   }
 
   logger: Logger;
