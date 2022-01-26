@@ -1,6 +1,7 @@
-import fetch from 'node-fetch';
+import fetch, { RequestInit } from 'node-fetch';
 
-import { refreshToken, StoredToken } from "./auth.js";
+import { refreshToken, retrieveToken, StoredToken } from "./auth.js";
+import { TWITCH_CLIENT_ID } from './constants.js';
 import { Logger } from "./util/logger.js";
 
 /*
@@ -87,17 +88,29 @@ interface APIEventSubTransport {
 class AuthorizationError extends Error {
 }
 
+// Global app credentials - needed for webhook API calls
+let appToken = null;
+
+export async function initialiseAppToken(): Promise<void> {
+  const logger = new Logger("AppTokenInit")
+  appToken = await retrieveToken();
+  logger.info('App token loaded');
+}
+
 export class TwitchAPIClient {
   logger: Logger;
 
-  clientId: string;
-
   token: StoredToken;
 
-  constructor(token: StoredToken, clientId: string) {
+  constructor(token?: StoredToken) {
     this.logger = new Logger("TwitchAPIClient");
-    this.clientId = clientId;
+    // Use provided token if present
+    if (token != null) {
     this.token = token;
+    } else {
+      // Otherwise use the global app token
+      this.token = appToken;
+    }
   }
 
   // Identify the current user with the Twitch API
@@ -140,22 +153,36 @@ export class TwitchAPIClient {
     if (this.token == null) {
       throw new AuthorizationError("Token invalidated");
     }
-    // Do the request
-    const response = await fetch(`https://api.twitch.tv/helix${endpoint}`, {
+    // Setup request options
+    const reqOptions: RequestInit = {
       method: method,
       headers: {
         "Authorization": `Bearer ${this.token.token}`,
-        "Client-Id": this.clientId
-      },
-      body: body
-    });
+        "Client-Id": TWITCH_CLIENT_ID
+      }
+    };
+    // If the body is present, add to request
+    if (body != null) {
+      reqOptions.body = body;
+    }
+    // If the body is a string, assume it's JSON and add Content-Type
+    if (typeof body == 'string') {
+      reqOptions.headers['Content-Type'] = "application/json";
+    }
+    // Do the request
+    const response = await fetch(`https://api.twitch.tv/helix${endpoint}`, reqOptions);
     // If the request returned a bad response, return null;
     if (!response.ok) {
       this.logger.error(`Fetch failed: ${response.status} - ${await response.text()}`);
       return null;
     }
-    // Finally return the JSON response
-    return await response.json();
+    // Finally return the JSON response, if there is one to give
+    const respBody = await response.text();
+    if (respBody.length > 0) {
+      return JSON.parse(respBody);
+    } else {
+      return null;
+    }
   }
 
   // Ensure we're still logged in
