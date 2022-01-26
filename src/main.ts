@@ -6,6 +6,7 @@ import websockify from "koa-websocket";
 import { SERVER_PORT } from "./constants.js";
 import { AuthorizeRoute, LoginRoute } from "./routes/oauth.js";
 import { RContext, Route } from "./routes/route.js";
+import { WebhookRoute } from "./routes/webhook.js";
 import { WSRoute } from "./routes/ws.js";
 import { initialiseAppToken } from "./twitch.js";
 import { Logger } from "./util/logger.js";
@@ -46,6 +47,7 @@ const wsUnknownRoute = (ctx: RContext): void => {
 const routes: Route[] = [];
 routes.push(new LoginRoute());
 routes.push(new AuthorizeRoute());
+routes.push(new WebhookRoute())
 routes.forEach(r => {
   logger.trace(`Registered HTTP route for class: ${r.constructor.name}`);
   r.register(router);

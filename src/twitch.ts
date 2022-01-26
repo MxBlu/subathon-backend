@@ -27,6 +27,28 @@ export interface GETUsersResponse {
   ]
 }
 
+// https://dev.twitch.tv/docs/api/reference#get-eventsub-subscriptions
+export interface GETEventSubResponse {
+  data: [
+    {
+      id: string;
+      status: string;
+      type: string;
+      version: string;
+      condition: APIEventSubCondition;
+      created_at: string;
+      transport: APIEventSubTransport;
+      cost: number;
+    }
+  ],
+  total: number;
+  total_cost: number;
+  max_total_cost: number;
+  pagination: {
+    cursor: string;
+  }
+}
+
 // https://dev.twitch.tv/docs/api/reference#create-eventsub-subscription
 export interface POSTEventSubRequest {
   type: string;
@@ -98,6 +120,11 @@ export async function initialiseAppToken(): Promise<void> {
 }
 
 export class TwitchAPIClient {
+
+  public static async validateRequest(): Promise<boolean> {
+    return true;
+  }
+
   logger: Logger;
 
   token: StoredToken;
@@ -106,7 +133,7 @@ export class TwitchAPIClient {
     this.logger = new Logger("TwitchAPIClient");
     // Use provided token if present
     if (token != null) {
-    this.token = token;
+      this.token = token;
     } else {
       // Otherwise use the global app token
       this.token = appToken;
@@ -116,6 +143,10 @@ export class TwitchAPIClient {
   // Identify the current user with the Twitch API
   public async identifyUser(): Promise<GETUsersResponse> {
     return await this.call('/users', 'GET') as GETUsersResponse;
+  }
+
+  public async getEventSubSubscriptions(): Promise<GETEventSubResponse> {
+    return await this.call('/eventsub/subscriptions', 'GET') as GETEventSubResponse;
   }
 
   // Create a new EventSub subscription on the Twitch API

@@ -17,6 +17,8 @@ export const API_BASE = process.env.API_BASE;
 export const FRONTEND_BASE = process.env.FRONTEND_BASE;
 // URL to redirect from OAuth
 export const OAUTH_REDIRECT_URI = `${API_BASE}/authorize`;
+// URL to handle webhooks
+export const WEBHOOK_URI = `${API_BASE}/webhook`;
 // Twitch API client ID
 export const TWITCH_CLIENT_ID = process.env.TWITCH_CLIENT_ID;
 // Twitch API client secret
