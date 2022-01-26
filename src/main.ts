@@ -1,4 +1,5 @@
 import Application, { Context, DefaultState } from "koa";
+import bodyParser from "koa-bodyparser";
 import Router from "koa-router";
 import websockify from "koa-websocket";
 
@@ -50,7 +51,8 @@ routes.forEach(r => {
   r.register(router);
 });
 
-// Add error handling and routing middleware for HTTP
+// Add body parsing, error handling and routing middleware for HTTP
+app.use(bodyParser());
 app.use(errorHandler);
 app.use(router.routes());
 app.use(router.allowedMethods());
