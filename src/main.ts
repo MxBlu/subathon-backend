@@ -3,7 +3,7 @@ import bodyParser from "koa-bodyparser";
 import Router from "koa-router";
 import websockify from "koa-websocket";
 
-import { SERVER_PORT } from "./constants.js";
+import { SERVER_PORT, SERVER_REVERSE_PROXY } from "./constants.js";
 import { AuthorizeRoute, LoginRoute } from "./routes/oauth.js";
 import { RContext, Route } from "./routes/route.js";
 import { WebhookRoute } from "./routes/webhook.js";
@@ -14,7 +14,7 @@ import { Logger } from "./util/logger.js";
 const logger = new Logger("Server");
 
 // Koa Application with websocket support
-const app = websockify<DefaultState, RContext>(new Application);
+const app = websockify<DefaultState, RContext>(new Application({ proxy: SERVER_REVERSE_PROXY }));
 // 2 routers for HTTP and WS
 const router = new Router<DefaultState, RContext>();
 const wsRouter = new Router<DefaultState, RContext>();

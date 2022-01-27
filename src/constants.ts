@@ -10,6 +10,8 @@ export const LOGGER_NAME_PAD_LENGTH = 20;
 
 // Port to run REST server on
 export const SERVER_PORT = parseInt(process.env.SERVER_PORT) || 3000;
+// Whether server is behind a reverse proxy or not
+export const SERVER_REVERSE_PROXY = envFlagOrDefault("SERVER_REVERSE_PROXY", false);
 
 // Base URL for the API - used for OAuth and webhook generation
 export const API_BASE = process.env.API_BASE;
@@ -28,3 +30,11 @@ export const TWITCH_CLIENT_SECRET = process.env.TWITCH_CLIENT_SECRET;
 export const CLIENT_TIMEOUT = 5 * 60 * 1000;
 // Interval between garbage collection runs in ClientMap (milliseconds)
 export const CLIENT_MAP_GC_INTERVAL = 5 * 60 * 1000;
+
+function envFlagOrDefault(variableName: string, defaultValue: boolean): boolean {
+  if (process.env[variableName] != null) {
+    return process.env[variableName] === 'true';
+  } else {
+    return defaultValue;
+  }
+}
