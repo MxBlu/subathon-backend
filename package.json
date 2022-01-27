@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "nodemon --watch \"src/**\" --ext ts,json --exec node --experimental-specifier-resolution=node --loader ts-node/esm src/main.ts",
-    "fstart": "pm2 start --name quotebot built/main.js",
+    "fstart": "pm2 start --name subathon-backend built/main.js",
     "build": "tsc --build tsconfig.json",
     "clean": "tsc --build --clean",
     "lint": "eslint . --ext .ts"
