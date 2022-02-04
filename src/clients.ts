@@ -6,10 +6,6 @@ import { CLIENT_MAP_GC_INTERVAL, CLIENT_TIMEOUT, WEBHOOK_URI } from "./constants
 import { TwitchAPIClient } from "./twitch.js";
 import { Logger } from "./util/logger.js";
 
-// Header names for websocket session identification
-export const HEADER_SESSION_ID = "x-session-id";
-export const HEADER_SESSION_SECRET = "x-session-secret";
-
 // Webhook types to register for a new client
 const WEBHOOK_TYPES = [ "channel.subscribe", "channel.subscription.gift", "channel.cheer" ];
 
