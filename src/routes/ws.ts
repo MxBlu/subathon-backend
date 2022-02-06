@@ -95,7 +95,7 @@ export class WSRoute implements Route {
       }
     });
 
-    // Setup socket cleanup handler before continuing, just in case
+    // Setup socket cleanup handler
     context.websocket.on("close", () => {
       if (sessionId != null) {
         try {
