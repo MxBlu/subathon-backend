@@ -1,9 +1,9 @@
-import Router from "koa-router";
-import { ClientMap } from "../clients.js";
-import { CLIENT_TIMEOUT } from "../constants.js";
-import { Logger } from "../util/logger.js";
-import { socketSend } from "../util/socket_utils.js";
-import { RContext, Route } from "./route.js";
+import Router from 'koa-router';
+import {ClientMap} from '../clients.js';
+import {CLIENT_TIMEOUT} from '../constants.js';
+import {Logger} from '../util/logger.js';
+import {socketSend} from '../util/socket_utils.js';
+import {RContext, Route} from './route.js';
 
 // Interface for authentication payload on WS startup
 interface WsAuthenticationMessage {
@@ -16,27 +16,29 @@ export class WSRoute implements Route {
   logger: Logger;
 
   constructor() {
-    this.logger = new Logger("WSRoute");
+    this.logger = new Logger('WSRoute');
   }
 
   public register(router: Router): void {
     router.get('/ws', this.handle);
   }
 
-  public handle = async (context: RContext): Promise<void> => {
+  public handle = async(context: RContext): Promise<void> => {
     // Track sessionId across the arrow functions in this call
     let sessionId = null;
-    context.websocket.on('ping', () => this.logger.trace(`Ping: ${context.ip}`));
-    context.websocket.on('pong', () => this.logger.trace(`Pong: ${context.ip}`));
+    context.websocket.on(
+        'ping', () => this.logger.trace(`Ping: ${context.ip}`));
+    context.websocket.on(
+        'pong', () => this.logger.trace(`Pong: ${context.ip}`));
     // Close the connection after CLIENT_TIMEOUT ms if not authenticated
     const connectionTimeout = setTimeout(() => {
       this.logger.warn(`Unauthenticated session timed out: ${context.ip}`);
-      socketSend(context.websocket, { 'status': 'TIMED_OUT' });
+      socketSend(context.websocket, {'status': 'TIMED_OUT'});
       context.websocket.close(1008);
     }, CLIENT_TIMEOUT);
 
     // Handle receiving a message, which must be a WsAuthenticationMessage
-    context.websocket.on('message', async (message: string): Promise<void> => {
+    context.websocket.on('message', async(message: string): Promise<void> => {
       // Since we've received a message, prevent the connection from timing out
       clearTimeout(connectionTimeout);
       // Parse the authentication request into an object
@@ -50,8 +52,8 @@ export class WSRoute implements Route {
       // If there's no sessionId set, the request is invalid
       if (authMessage?.sessionId == null) {
         this.logger.warn(
-          `Client sent a malformed authentication request: ${context.ip}`);
-        socketSend(context.websocket, { 'status': 'BAD_REQUEST' });
+            `Client sent a malformed authentication request: ${context.ip}`);
+        socketSend(context.websocket, {'status': 'BAD_REQUEST'});
         context.websocket.close(1008);
         return;
       }
@@ -61,21 +63,23 @@ export class WSRoute implements Route {
 
       // Find ClientInfo for session
       const clientInfo = ClientMap.getClient(authMessage.sessionId);
-      if (clientInfo == null || clientInfo.sessionSecret != authMessage.sessionSecret) {
-        // If there's no ClientInfo with this session ID 
+      if (clientInfo == null ||
+          clientInfo.sessionSecret != authMessage.sessionSecret) {
+        // If there's no ClientInfo with this session ID
         //  or the secret doesn't match, drop the connection
         this.logger.warn(
-          `Client attempted to connected with unknown or incorrect session: ${authMessage.sessionId}, ${context.ip}`);
-        socketSend(context.websocket, { 'status': 'UNAUTHORIZED' });
+            `Client attempted to connected with unknown or incorrect session: ${
+                authMessage.sessionId}, ${context.ip}`);
+        socketSend(context.websocket, {'status': 'UNAUTHORIZED'});
         context.websocket.close(1008);
         return;
       }
 
       // Prevent multiple connections for the same session
       if (clientInfo.clientSocket != null) {
-        this.logger.warn(
-          `Client attempted to connect to a in-use session: ${authMessage.sessionId}, ${context.ip}`);
-        socketSend(context.websocket, { 'status': 'IN_USE' });
+        this.logger.warn(`Client attempted to connect to a in-use session: ${
+            authMessage.sessionId}, ${context.ip}`);
+        socketSend(context.websocket, {'status': 'IN_USE'});
         context.websocket.close(1008);
         return;
       }
@@ -86,56 +90,55 @@ export class WSRoute implements Route {
         await ClientMap.setupClient(clientInfo.sessionId, context.websocket);
         this.logger.info(`Socket registered for session: ${sessionId}`);
         // Let the socket know we're set up
-        socketSend(context.websocket, { 'status': 'CONNECTED' });
+        socketSend(context.websocket, {'status': 'CONNECTED'});
         setTimeout(function() {
-              socketSend(context.websocket,
-              {
-		    "subscription": {
-			"id": "f1c2a387-161a-49f9-a165-0f21d7a4e1c4",
-			"type": "channel.subscription.gift",
-			"version": "1",
-			"status": "enabled",
-			"cost": 0,
-		        "condition": {
-		           "broadcaster_user_id": "1337"
-		        },
-		         "transport": {
-		            "method": "webhook",
-		            "callback": "https://example.com/webhooks/callback"
-		        },
-		        "created_at": "2019-11-16T10:11:12.123Z"
-		    },
-		    "event": {
-		        "user_id": "1234",
-		        "user_login": "cool_user",
-		        "user_name": "Cool_User",
-		        "broadcaster_user_id": "1337",
-		        "broadcaster_user_login": "cooler_user",
-		        "broadcaster_user_name": "Cooler_User",
-		        "total": 2,
-		        "tier": "1000",
-		        "cumulative_total": 284, //null if anonymous or not shared by the user
-		        "is_anonymous": false
-		    }
-	     });
-       }, 10000);
+          socketSend(context.websocket, {
+            'subscription': {
+              'id': 'f1c2a387-161a-49f9-a165-0f21d7a4e1c4',
+              'type': 'channel.subscription.gift',
+              'version': '1',
+              'status': 'enabled',
+              'cost': 0,
+              'condition': {'broadcaster_user_id': '1337'},
+              'transport': {
+                'method': 'webhook',
+                'callback': 'https://example.com/webhooks/callback'
+              },
+              'created_at': '2019-11-16T10:11:12.123Z'
+            },
+            'event': {
+              'user_id': '1234',
+              'user_login': 'cool_user',
+              'user_name': 'Cool_User',
+              'broadcaster_user_id': '1337',
+              'broadcaster_user_login': 'cooler_user',
+              'broadcaster_user_name': 'Cooler_User',
+              'total': 2,
+              'tier': '1000',
+              'cumulative_total':
+                  284,  // null if anonymous or not shared by the user
+              'is_anonymous': false
+            }
+          });
+        }, 10000);
       } catch (e) {
         this.logger.error(`Unable to setup client: ${e}`);
         this.logger.error((e as Error).stack);
         // Alert the socket that we failed and close the connection
-        socketSend(context.websocket, { 'status': 'ERROR' });
+        socketSend(context.websocket, {'status': 'ERROR'});
         context.websocket.close(1008);
       }
     });
 
     // Setup socket cleanup handler
-    context.websocket.on("close", () => {
+    context.websocket.on('close', () => {
       if (sessionId != null) {
         try {
           this.logger.info(`Socket disconnected for session: ${sessionId}`);
           ClientMap.cleanupClient(sessionId);
         } catch (e) {
-          this.logger.error(`Failed to cleanup client for session ${sessionId}: ${e}`);
+          this.logger.error(
+              `Failed to cleanup client for session ${sessionId}: ${e}`);
           this.logger.error((e as Error).stack);
         }
       }
