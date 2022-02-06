@@ -24,9 +24,6 @@ export class WSRoute implements Route {
   }
 
   public handle = async (context: RContext): Promise<void> => {
-    // Get session details from header
-    // const sessionId = context.header[HEADER_SESSION_ID] as string;
-    // const sessionSecret = context.header[HEADER_SESSION_SECRET] as string;
     // Track sessionId across the arrow functions in this call
     let sessionId = null;
 
