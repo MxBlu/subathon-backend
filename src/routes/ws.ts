@@ -16,7 +16,7 @@ export class WSRoute implements Route {
   logger: Logger;
 
   constructor() {
-    this.logger = new Logger("LoginRoute");
+    this.logger = new Logger("WSRoute");
   }
 
   public register(router: Router): void {
