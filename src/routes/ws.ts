@@ -95,7 +95,7 @@ export class WSRoute implements Route {
     });
 
     // Setup socket cleanup handler
-    context.websocket.on("close", (a, b) => {
+    context.websocket.on("close", () => {
       if (clientInfo != null) {
         this.logger.info(`Socket disconnected for session: ${clientInfo.sessionId}`);
         // Update the last activity date
