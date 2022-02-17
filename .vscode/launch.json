@@ -9,7 +9,6 @@
             "type": "node",
             "request": "launch",
             "runtimeExecutable": "node",
-            "runtimeVersion": "16",
             "runtimeArgs": ["--loader", "ts-node/esm", "--nolazy"],
             "args": ["src/main.ts"],
             "cwd": "${workspaceRoot}",
