@@ -14,8 +14,8 @@ export class ClientInfo {
   sessionId: string;
   // Secret for verifying the session
   sessionSecret: string;
-  // Date session was initialised
-  initDate: Date;
+  // Date the socket last had a significant event
+  lastActivity: Date;
   // Client token for API calls
   clientToken: StoredToken;
   // Secret to verify webhook messages
@@ -55,7 +55,7 @@ class ClientMapImpl {
   public generateSession(clientToken: StoredToken): ClientInfo {
     const clientInfo = new ClientInfo();
     clientInfo.clientToken = clientToken;
-    clientInfo.initDate = new Date();
+    clientInfo.lastActivity = new Date();
     // Generate session ID and secrets
     clientInfo.sessionId = crypto.randomUUID();
     clientInfo.sessionSecret = crypto.randomBytes(16).toString("hex");
@@ -71,24 +71,27 @@ class ClientMapImpl {
     const clientInfo = this.getClient(sessionId);
     clientInfo.clientSocket = socket;
 
-    // Create a client with the user's credentials
-    const userClient = new TwitchAPIClient(clientInfo.clientToken);
-    // Get info about the current user
-    const userResponse = await userClient.identifyUser();
-    const userId = userResponse.data[0].id;
-    this.logger.debug(`Identified user for session: ${sessionId} as ${userId}`);
-    // Create a client with the app's credentials
-    const appClient = new TwitchAPIClient();
-    // Setup webhooks to listen to
-    for (const type of WEBHOOK_TYPES) {
-      const webhookResponse = await appClient.createEventSubSubscription(
-          type, userId, WEBHOOK_URI, clientInfo.webhookSecret);
-      const webhookId = webhookResponse.data[0].id;
-      this.logger.debug(
-          `Created webhook of type '${type}' for session: ${sessionId}, ${webhookId}`);
-      // Add webhooks to ClientInfo and lookup
-      clientInfo.webhooks.push(webhookId);
-      this.webhookSessionLookup.set(webhookId, sessionId);
+    // If there's no webhooks present on the client, create them
+    if (clientInfo.webhooks.length == 0) {
+      // Create a client with the user's credentials
+      const userClient = new TwitchAPIClient(clientInfo.clientToken);
+      // Get info about the current user
+      const userResponse = await userClient.identifyUser();
+      const userId = userResponse.data[0].id;
+      this.logger.debug(`Identified user for session: ${sessionId} as ${userId}`);
+      // Create a client with the app's credentials
+      const appClient = new TwitchAPIClient();
+      // Setup webhooks to listen to
+      for (const type of WEBHOOK_TYPES) {
+        const webhookResponse = await appClient.createEventSubSubscription(
+            type, userId, WEBHOOK_URI, clientInfo.webhookSecret);
+        const webhookId = webhookResponse.data[0].id;
+        this.logger.debug(
+            `Created webhook of type '${type}' for session: ${sessionId}, ${webhookId}`);
+        // Add webhooks to ClientInfo and lookup
+        clientInfo.webhooks.push(webhookId);
+        this.webhookSessionLookup.set(webhookId, sessionId);
+      }
     }
   }
 
@@ -139,7 +142,7 @@ class ClientMapImpl {
     for (const clientInfo of this.clients.values()) {
       // If the socket is not present, and older than CLIENT_TIMEOUT
       if (clientInfo.clientSocket == null && 
-          dateAge(clientInfo.initDate) > CLIENT_TIMEOUT) {
+          dateAge(clientInfo.lastActivity) > CLIENT_TIMEOUT) {
         // Clean up the client
         this.logger.warn(`Cleaning up stale client: ${clientInfo.sessionId}`);
         this.cleanupClient(clientInfo.sessionId);

@@ -1,5 +1,5 @@
 import Router from "koa-router";
-import { ClientMap } from "../clients.js";
+import { ClientInfo, ClientMap } from "../clients.js";
 import { CLIENT_TIMEOUT } from "../constants.js";
 import { Logger } from "../util/logger.js";
 import { socketSend } from "../util/socket_utils.js";
@@ -24,8 +24,8 @@ export class WSRoute implements Route {
   }
 
   public handle = async (context: RContext): Promise<void> => {
-    // Track sessionId across the arrow functions in this call
-    let sessionId = null;
+    // Track clientInfo across the arrow functions in this call
+    let clientInfo: ClientInfo = null;
 
     // Close the connection after CLIENT_TIMEOUT ms if not authenticated
     const connectionTimeout = setTimeout(() => {
@@ -55,12 +55,9 @@ export class WSRoute implements Route {
         return;
       }
 
-      // Set the function-local sessionId to the provided
-      sessionId = authMessage.sessionId;
-
       // Find ClientInfo for session
-      const clientInfo = ClientMap.getClient(authMessage.sessionId);
-      if (clientInfo == null || clientInfo.sessionSecret != authMessage.sessionSecret) {
+      const requestedClientInfo = ClientMap.getClient(authMessage.sessionId);
+      if (requestedClientInfo == null || requestedClientInfo.sessionSecret != authMessage.sessionSecret) {
         // If there's no ClientInfo with this session ID 
         //  or the secret doesn't match, drop the connection
         this.logger.warn(
@@ -70,20 +67,22 @@ export class WSRoute implements Route {
         return;
       }
 
-      // Prevent multiple connections for the same session
+      // Track the clientInfo across the closures handling the websocket
+       clientInfo = requestedClientInfo;
+
+      // Close existing client sockets
       if (clientInfo.clientSocket != null) {
         this.logger.warn(
-          `Client attempted to connect to a in-use session: ${authMessage.sessionId}, ${context.ip}`);
-        socketSend(context.websocket, { 'status': 'IN_USE' });
-        context.websocket.close(1008);
-        return;
+          `Closing existing socket for session and replacing: ${authMessage.sessionId}, ${context.ip}`);
+        socketSend(clientInfo.clientSocket, { 'status': 'SWITCHING_SOCKET' });
+        clientInfo.clientSocket.close();
       }
 
       // Finally, set up the client session on the websocket
       try {
         // Register websocket to client
         await ClientMap.setupClient(clientInfo.sessionId, context.websocket);
-        this.logger.info(`Socket registered for session: ${sessionId}`);
+        this.logger.info(`Socket registered for session: ${clientInfo.sessionId}`);
         // Let the socket know we're set up
         socketSend(context.websocket, { 'status': 'CONNECTED' });
       } catch (e) {
@@ -96,14 +95,15 @@ export class WSRoute implements Route {
     });
 
     // Setup socket cleanup handler
-    context.websocket.on("close", () => {
-      if (sessionId != null) {
-        try {
-          this.logger.info(`Socket disconnected for session: ${sessionId}`);
-          ClientMap.cleanupClient(sessionId);
-        } catch (e) {
-          this.logger.error(`Failed to cleanup client for session ${sessionId}: ${e}`);
-          this.logger.error((e as Error).stack);
+    context.websocket.on("close", (a, b) => {
+      if (clientInfo != null) {
+        this.logger.info(`Socket disconnected for session: ${clientInfo.sessionId}`);
+        // Update the last activity date
+        clientInfo.lastActivity = new Date();
+        // Just remove the client socket from client info
+        //  but only if the current socket is actually the socket in this closure
+        if (clientInfo.clientSocket == context.websocket) {
+          clientInfo.clientSocket = null;
         }
       }
     });
