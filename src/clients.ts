@@ -3,7 +3,7 @@ import * as WebSocket from 'ws';
 
 import { StoredToken } from "./auth.js";
 import { CLIENT_MAP_GC_INTERVAL, CLIENT_TIMEOUT, WEBHOOK_URI } from "./constants.js";
-import { TwitchAPIClient } from "./twitch.js";
+import { cleanupOldWebhooks, TwitchAPIClient } from "./twitch.js";
 import { Logger } from "./util/logger.js";
 
 // Webhook types to register for a new client
@@ -79,6 +79,8 @@ class ClientMapImpl {
       const userResponse = await userClient.identifyUser();
       const userId = userResponse.data[0].id;
       this.logger.debug(`Identified user for session: ${sessionId} as ${userId}`);
+      // Clean up old webhooks for this user
+      cleanupOldWebhooks(userId);
       // Create a client with the app's credentials
       const appClient = new TwitchAPIClient();
       // Setup webhooks to listen to

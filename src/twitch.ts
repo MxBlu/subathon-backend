@@ -100,7 +100,7 @@ export async function initialiseAppToken(): Promise<void> {
   logger.info('App token loaded');
 }
 
-export async function cleanupOldWebhooks(): Promise<void> {
+export async function cleanupOldWebhooks(userId?: string): Promise<void> {
   const logger = new Logger("WebhookCleanup");
   // Get app access token client
   const client = new TwitchAPIClient();
@@ -110,8 +110,11 @@ export async function cleanupOldWebhooks(): Promise<void> {
   let cursor: string = null;
   do {
     const getEventSubResponse = await client.getEventSubSubscriptions(cursor);
-    // Add all webhook ids to the list
-    getEventSubResponse.data.forEach(esr => webhooks.push(esr.id));
+    // Add webhook ids to the list
+    // If a userId is specified, filter to only the webhooks for that user
+    getEventSubResponse.data
+        .filter(esr => userId != null ? esr.condition.broadcaster_user_id == userId : true)
+        .forEach(esr => webhooks.push(esr.id));
     // Set the cursor if present
     cursor = getEventSubResponse.pagination?.cursor;
   } while (cursor != null);
