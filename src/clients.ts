@@ -80,7 +80,7 @@ class ClientMapImpl {
       const userId = userResponse.data[0].id;
       this.logger.debug(`Identified user for session: ${sessionId} as ${userId}`);
       // Clean up old webhooks for this user
-      cleanupOldWebhooks(userId);
+      await cleanupOldWebhooks(userId);
       // Create a client with the app's credentials
       const appClient = new TwitchAPIClient();
       // Setup webhooks to listen to
